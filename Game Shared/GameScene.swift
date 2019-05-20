@@ -7,13 +7,20 @@
 //
 
 import SpriteKit
+import os
+import CoreMotion
+
+var motionManager: CMMotionManager!
+
+
 
 class GameScene: SKScene {
     
-    
-    fileprivate var label : SKLabelNode?
-    fileprivate var spinnyNode : SKShapeNode?
 
+    fileprivate var maze : Maze?
+    fileprivate var spinnyNode : SKShapeNode?
+    
+    
     
     class func newGameScene() -> GameScene {
         // Load 'GameScene.sks' as an SKScene.
@@ -25,20 +32,43 @@ class GameScene: SKScene {
         // Set the scale mode to scale to fit the window
         scene.scaleMode = .aspectFill
         
+        
         return scene
     }
     
     func setUpScene() {
-        // Get label node from scene and store it for use later
-        self.label = self.childNode(withName: "//helloLabel") as? SKLabelNode
-        if let label = self.label {
-            label.alpha = 0.0
-            label.run(SKAction.fadeIn(withDuration: 2.0))
+        // Origins seem to be in the middle of everything
+        // for height negative is down
+        // For width negative is left
+        
+        self.maze = Maze(cellSize: 200)
+        
+        if let maze = self.maze {
+            for wall in maze.walls {
+                self.addChild(wall)
+            }
         }
+
+        
+        let circle = SKShapeNode(circleOfRadius: 10 )
+        circle.position = CGPoint(x: 0, y: 0)
+        circle.strokeColor = .white
+        circle.glowWidth = 1.0
+        circle.fillColor = .orange
+        circle.physicsBody = SKPhysicsBody(circleOfRadius: 12)
+        circle.physicsBody?.restitution = 1
+        circle.physicsBody?.friction = 0
+        self.addChild(circle)
+        
+//        if let floor = floor?.copy() as! SKNode? {
+//            self.addChild(floor)
+//        }
+    
+        
         
         // Create shape node to use during mouse interaction
         let w = (self.size.width + self.size.height) * 0.05
-        self.spinnyNode = SKShapeNode.init(rectOf: CGSize.init(width: w, height: w), cornerRadius: w * 0.3)
+        self.spinnyNode = SKShapeNode.init(rectOf: CGSize.init(width: w, height: w), cornerRadius: w * 0.1)
         
         if let spinnyNode = self.spinnyNode {
             spinnyNode.lineWidth = 4.0
@@ -68,6 +98,15 @@ class GameScene: SKScene {
     #else
     override func didMove(to view: SKView) {
         self.setUpScene()
+        let motionManager = CMMotionManager()
+        motionManager.startAccelerometerUpdates()
+        motionManager.accelerometerUpdateInterval = 0.1
+        motionManager.startAccelerometerUpdates(to: OperationQueue.main) { (data, error) in
+            if let accelerometerData = motionManager.accelerometerData {
+                self.physicsWorld.gravity = CGVector(dx: accelerometerData.acceleration.x * 9.8, dy: 9.8 * accelerometerData.acceleration.y)
+            }
+            
+        }
     }
     #endif
 
@@ -89,10 +128,6 @@ class GameScene: SKScene {
 extension GameScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let label = self.label {
-            label.run(SKAction.init(named: "Pulse")!, withKey: "fadeInOut")
-        }
-        
         for t in touches {
             self.makeSpinny(at: t.location(in: self), color: SKColor.green)
         }
@@ -125,9 +160,6 @@ extension GameScene {
 extension GameScene {
 
     override func mouseDown(with event: NSEvent) {
-        if let label = self.label {
-            label.run(SKAction.init(named: "Pulse")!, withKey: "fadeInOut")
-        }
         self.makeSpinny(at: event.location(in: self), color: SKColor.green)
     }
     
