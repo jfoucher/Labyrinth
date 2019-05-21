@@ -16,11 +16,38 @@ var motionManager: CMMotionManager!
 
 class GameScene: SKScene {
     
-
+    var start = Date()
     fileprivate var maze : Maze?
     fileprivate var spinnyNode : SKShapeNode?
     var circle: SKShapeNode?
-    var won = false
+    var won: Bool = false {
+        willSet(newNow) {
+            print(newNow)
+            if(newNow == true) {
+                let timeElapsed = Date().timeIntervalSince(self.start)
+                DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
+                    self.removeAllChildren()
+                    print("YOU WIN!!")
+                    let scoreLabel = SKLabelNode(fontNamed: "Chalkduster")
+                    scoreLabel.text = "YOU WIN!!"
+                    scoreLabel.fontSize = 50
+                    scoreLabel.horizontalAlignmentMode = .center
+                    scoreLabel.position = CGPoint(x: 0, y: 0)
+                    self.addChild(scoreLabel)
+                    let timeLabel = SKLabelNode()
+                    timeLabel.text = String(format: "Your time is %.2fs", timeElapsed)
+                    timeLabel.horizontalAlignmentMode = .center
+                    timeLabel.position = CGPoint(x: 0, y: -100)
+                    self.addChild(timeLabel)
+                })
+            } else {
+                self.removeAllChildren()
+            }
+        }
+    }
+
+    var level = 1;
+    
     
     class func newGameScene() -> GameScene {
         // Load 'GameScene.sks' as an SKScene.
@@ -40,17 +67,23 @@ class GameScene: SKScene {
         // Origins seem to be in the middle of everything
         // for height negative is down
         // For width negative is left
+        let cameraNode = SKCameraNode()
         
-        self.won = false
-        self.maze = Maze(cellSize: 50, mazeSize: CGSize(width: 200, height: 200))
+        cameraNode.position = CGPoint(x: self.size.width / 2,
+                                      y: self.size.height / 2)
+        
+        self.addChild(cameraNode)
+        self.camera = cameraNode
+
+        self.maze = Maze(cellSize: 60, mazeSize: CGSize(width: level * 180, height: level * 180))
         
         if let maze = self.maze {
             for wall in maze.walls {
                 self.addChild(wall)
             }
-            for label in maze.labels {
-                self.addChild(label)
-            }
+//            for label in maze.labels {
+//                self.addChild(label)
+//            }
         }
 
         self.circle = SKShapeNode(circleOfRadius: 10 )
@@ -64,6 +97,7 @@ class GameScene: SKScene {
             cir.physicsBody?.friction = 0.1
             self.addChild(cir)
         }
+        self.start = Date()
     }
     
     #if os(watchOS)
@@ -72,14 +106,6 @@ class GameScene: SKScene {
     }
     #else
     override func didMove(to view: SKView) {
-        let cameraNode = SKCameraNode()
-        
-        cameraNode.position = CGPoint(x: self.size.width / 2,
-                                      y: self.size.height / 2)
-        
-        self.addChild(cameraNode)
-        self.camera = cameraNode
-        
         self.setUpScene()
         
         
@@ -104,7 +130,6 @@ class GameScene: SKScene {
             let distance = pow((cir.position.x - coords.x), 2) + pow((cir.position.y - coords.y), 2);
             let cSize = pow(maze.cellSize.width / 2, 2) + pow(maze.cellSize.height / 2, 2)
             if (distance < cSize && !self.won) {
-                print("YOU WIN!!!")
                 self.won = true
             }
         }
@@ -125,7 +150,11 @@ extension GameScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for t in touches {
-            //self.makeSpinny(at: t.location(in: self), color: SKColor.green)
+            if (self.won == true) {
+                self.won = false
+                self.level += 1
+                self.setUpScene()
+            }
         }
     }
     
