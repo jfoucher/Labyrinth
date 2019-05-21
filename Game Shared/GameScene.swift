@@ -16,6 +16,7 @@ var motionManager: CMMotionManager!
 
 class GameScene: SKScene {
     
+    fileprivate var touches = Int(0)
     var start = Date()
     fileprivate var maze : Maze?
     fileprivate var spinnyNode : SKShapeNode?
@@ -147,14 +148,17 @@ class GameScene: SKScene {
 #if os(iOS) || os(tvOS)
 // Touch-based event handling
 extension GameScene {
-
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches {
-            if (self.won == true) {
-                self.won = false
-                self.level += 1
-                self.setUpScene()
-            }
+        self.touches += touches.count
+       
+        if (self.won == true) {
+            self.won = false
+            self.level += 1
+            self.setUpScene()
+        }
+        if self.touches >= 5 {
+            self.won = true
         }
     }
     
@@ -165,12 +169,14 @@ extension GameScene {
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        self.touches -= touches.count
         for t in touches {
-            //self.makeSpinny(at: t.location(in: self), color: SKColor.red)
+
         }
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        self.touches -= touches.count
         for t in touches {
             //self.makeSpinny(at: t.location(in: self), color: SKColor.red)
         }
