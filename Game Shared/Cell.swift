@@ -99,7 +99,7 @@ class Cell: NSCopying {
                 if self.linked.filter({
                     $0.coord.i == self.coord.i && $0.coord.j == self.coord.j + 1
                 }).count == 0 && !self.exit {
-                    size = CGSize(width: self.size.width, height: 5)
+                    size = CGSize(width: self.size.width + 5, height: 5)
                     wall = Wall(color: .white, size: size)
                     pos = CGPoint(x: self.coordinates.x, y: self.coordinates.y - self.size.height / 2)
                     wall.position = pos
@@ -110,7 +110,7 @@ class Cell: NSCopying {
                 if self.linked.filter({
                     $0.coord.i == self.coord.i && $0.coord.j == self.coord.j - 1
                 }).count == 0 && !self.exit {
-                    size = CGSize(width: self.size.width, height: 5)
+                    size = CGSize(width: self.size.width + 5, height: 5)
                     wall = Wall(color: .white, size: size)
                     pos = CGPoint(x: self.coordinates.x, y: self.coordinates.y + self.size.height / 2)
                     wall.position = pos
@@ -121,7 +121,7 @@ class Cell: NSCopying {
                 if self.linked.filter({
                     $0.coord.i == self.coord.i - 1 && $0.coord.j == self.coord.j
                 }).count == 0  && !self.exit {
-                    size = CGSize(width: 5, height: self.size.height)
+                    size = CGSize(width: 5, height: self.size.height + 5)
                     wall = Wall(color: .white, size: size)
                     pos = CGPoint(x: self.coordinates.x - self.size.width / 2, y: self.coordinates.y)
                     wall.position = pos
@@ -132,7 +132,7 @@ class Cell: NSCopying {
                 if self.linked.filter({
                     $0.coord.i == self.coord.i + 1 && $0.coord.j == self.coord.j
                 }).count == 0  && !self.exit {
-                    size = CGSize(width: 5, height: self.size.height)
+                    size = CGSize(width: 5, height: self.size.height + 5)
                     wall = Wall(color: .white, size: size)
                     pos = CGPoint(x: self.coordinates.x + self.size.width / 2, y: self.coordinates.y)
                     wall.position = pos
