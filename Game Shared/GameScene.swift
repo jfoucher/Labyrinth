@@ -76,7 +76,7 @@ class GameScene: SKScene {
         self.addChild(cameraNode)
         self.camera = cameraNode
 
-        self.maze = Maze(cellSize: 60, mazeSize: CGSize(width: level * 180, height: level * 180))
+        self.maze = Maze(cellSize: 60, mazeSize: CGSize(width: pow(Double(level), 0.7) * 180, height: pow(Double(level), 0.7) * 180))
         
         if let maze = self.maze {
             for wall in maze.walls {
