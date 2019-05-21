@@ -14,7 +14,7 @@ class Wall : SKSpriteNode {
         super.init(texture: nil, color: color, size: size)
         self.physicsBody = SKPhysicsBody(rectangleOf: size)
         self.physicsBody?.isDynamic = false
-        self.physicsBody?.restitution = 0.5
+        self.physicsBody?.restitution = 0.1
     }
     
     required init?(coder adecoder: NSCoder) {

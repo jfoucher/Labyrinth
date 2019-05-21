@@ -33,9 +33,10 @@ class Maze {
     var walls: [Wall]
     var labels: [SKLabelNode]
     var cells: [Cell]
-    fileprivate var cellSize: CGSize
+    var cellSize: CGSize
     
     var startCell: Cell?
+    var exitCell: Cell?
     
     init(cellSize: CGFloat, mazeSize: CGSize) {
         
@@ -119,6 +120,7 @@ class Maze {
             let f = self.cells.filter { $0.index == possibleExit.cell.index }
             if let ex = f.first {
                 self.cells[ex.index].exit = true
+                self.exitCell = self.cells[ex.index]
             }
             let allCells = self.cells
             

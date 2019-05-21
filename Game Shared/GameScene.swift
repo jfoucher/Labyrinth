@@ -20,6 +20,7 @@ class GameScene: SKScene {
     fileprivate var maze : Maze?
     fileprivate var spinnyNode : SKShapeNode?
     var circle: SKShapeNode?
+    var won = false
     
     class func newGameScene() -> GameScene {
         // Load 'GameScene.sks' as an SKScene.
@@ -40,8 +41,8 @@ class GameScene: SKScene {
         // for height negative is down
         // For width negative is left
         
-        
-        self.maze = Maze(cellSize: 80, mazeSize: CGSize(width: 2000, height: 2000))
+        self.won = false
+        self.maze = Maze(cellSize: 50, mazeSize: CGSize(width: 200, height: 200))
         
         if let maze = self.maze {
             for wall in maze.walls {
@@ -63,38 +64,6 @@ class GameScene: SKScene {
             cir.physicsBody?.friction = 0.1
             self.addChild(cir)
         }
-        
-        
-        
-//        if let floor = floor?.copy() as! SKNode? {
-//            self.addChild(floor)
-//        }
-    
-        
-        
-        // Create shape node to use during mouse interaction
-        let w = (self.size.width + self.size.height) * 0.05
-        self.spinnyNode = SKShapeNode.init(rectOf: CGSize.init(width: w, height: w), cornerRadius: w * 0.1)
-        
-        if let spinnyNode = self.spinnyNode {
-            spinnyNode.lineWidth = 4.0
-            spinnyNode.run(SKAction.repeatForever(SKAction.rotate(byAngle: CGFloat(Double.pi), duration: 1)))
-            spinnyNode.run(SKAction.sequence([SKAction.wait(forDuration: 0.5),
-                                              SKAction.fadeOut(withDuration: 0.5),
-                                              SKAction.removeFromParent()]))
-            
-            #if os(watchOS)
-                // For watch we just periodically create one of these and let it spin
-                // For other platforms we let user touch/mouse events create these
-                spinnyNode.position = CGPoint(x: 0.0, y: 0.0)
-                spinnyNode.strokeColor = SKColor.red
-                self.run(SKAction.repeatForever(SKAction.sequence([SKAction.wait(forDuration: 2.0),
-                                                                   SKAction.run({
-                                                                       let n = spinnyNode.copy() as! SKShapeNode
-                                                                       self.addChild(n)
-                                                                   })])))
-            #endif
-        }
     }
     
     #if os(watchOS)
@@ -112,11 +81,6 @@ class GameScene: SKScene {
         self.camera = cameraNode
         
         self.setUpScene()
-        if let cir = self.circle {
-            cir.addObserver(self, forKeyPath: #keyPath(SKNode.position),
-                                    options: [.old, .new, .initial],
-                                    context: nil)
-        }
         
         
         let motionManager = CMMotionManager()
@@ -131,32 +95,27 @@ class GameScene: SKScene {
     }
     #endif
 
-    override func observeValue(forKeyPath keyPath: String?,
-                               of object: Any?, change: [NSKeyValueChangeKey : Any]?,
-                               context: UnsafeMutableRawPointer?) {
-        
-        print("did \(keyPath) \(#keyPath(SKNode.position))")
-        if keyPath == #keyPath(SKNode.position) {
-            
-            guard let camera = self.camera, let circ = object as? SKNode else { fatalError() }
-            
-            let loop = SKAction.customAction(withDuration: TimeInterval(CGFloat.infinity)) {_,_ in
-                let move = SKAction.move(to: CGPoint(x: circ.position.x, y: circ.position.y), duration: 0.2)
-                camera.run(SKAction.sequence([move]))
+
+    override func update(_ currentTime: TimeInterval) {
+        if let maze = self.maze, let exit = maze.exitCell, let cir = self.circle {
+            let coords = exit.coordinates
+            //print("\(cir.position.x) \(coords.x) \(maze.cellSize.width)")
+            //print("\(cir.position.y) \(coords.y) \(maze.cellSize.height)")
+            let distance = pow((cir.position.x - coords.x), 2) + pow((cir.position.y - coords.y), 2);
+            let cSize = pow(maze.cellSize.width / 2, 2) + pow(maze.cellSize.height / 2, 2)
+            if (distance < cSize && !self.won) {
+                print("YOU WIN!!!")
+                self.won = true
             }
         }
-    }
-    
-    func makeSpinny(at pos: CGPoint, color: SKColor) {
-        if let spinny = self.spinnyNode?.copy() as! SKShapeNode? {
-            spinny.position = pos
-            spinny.strokeColor = color
-            self.addChild(spinny)
+        //Camera handling
+        if let cam = self.camera, let cir = self.circle {
+            let distance = pow((cam.position.x - cir.position.x), 2) + pow((cam.position.y - cir.position.y), 2);
+            if (distance > 50) {
+                let action = SKAction.move(to: CGPoint(x: cir.position.x, y: cir.position.y), duration: 1.0)
+                cam.run(action)
+            }
         }
-    }
-    
-    override func update(_ currentTime: TimeInterval) {
-
     }
 }
 
@@ -166,25 +125,25 @@ extension GameScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for t in touches {
-            self.makeSpinny(at: t.location(in: self), color: SKColor.green)
+            //self.makeSpinny(at: t.location(in: self), color: SKColor.green)
         }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         for t in touches {
-            self.makeSpinny(at: t.location(in: self), color: SKColor.blue)
+            //self.makeSpinny(at: t.location(in: self), color: SKColor.blue)
         }
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         for t in touches {
-            self.makeSpinny(at: t.location(in: self), color: SKColor.red)
+            //self.makeSpinny(at: t.location(in: self), color: SKColor.red)
         }
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         for t in touches {
-            self.makeSpinny(at: t.location(in: self), color: SKColor.red)
+            //self.makeSpinny(at: t.location(in: self), color: SKColor.red)
         }
     }
     
@@ -197,15 +156,15 @@ extension GameScene {
 extension GameScene {
 
     override func mouseDown(with event: NSEvent) {
-        self.makeSpinny(at: event.location(in: self), color: SKColor.green)
+        //self.makeSpinny(at: event.location(in: self), color: SKColor.green)
     }
     
     override func mouseDragged(with event: NSEvent) {
-        self.makeSpinny(at: event.location(in: self), color: SKColor.blue)
+        //self.makeSpinny(at: event.location(in: self), color: SKColor.blue)
     }
     
     override func mouseUp(with event: NSEvent) {
-        self.makeSpinny(at: event.location(in: self), color: SKColor.red)
+        //self.makeSpinny(at: event.location(in: self), color: SKColor.red)
     }
 
 }
