@@ -19,8 +19,7 @@ class GameScene: SKScene {
 
     fileprivate var maze : Maze?
     fileprivate var spinnyNode : SKShapeNode?
-    
-    
+    var circle: SKShapeNode?
     
     class func newGameScene() -> GameScene {
         // Load 'GameScene.sks' as an SKScene.
@@ -41,24 +40,31 @@ class GameScene: SKScene {
         // for height negative is down
         // For width negative is left
         
-        self.maze = Maze(cellSize: 200)
+        
+        self.maze = Maze(cellSize: 80, mazeSize: CGSize(width: 2000, height: 2000))
         
         if let maze = self.maze {
             for wall in maze.walls {
                 self.addChild(wall)
             }
+            for label in maze.labels {
+                self.addChild(label)
+            }
         }
 
+        self.circle = SKShapeNode(circleOfRadius: 10 )
+        if let pos = maze?.startCell?.coordinates, let cir = self.circle {
+            cir.position = pos
+            cir.strokeColor = .white
+            cir.glowWidth = 1.0
+            cir.fillColor = .orange
+            cir.physicsBody = SKPhysicsBody(circleOfRadius: 12)
+            cir.physicsBody?.restitution = 0.6
+            cir.physicsBody?.friction = 0.1
+            self.addChild(cir)
+        }
         
-        let circle = SKShapeNode(circleOfRadius: 10 )
-        circle.position = CGPoint(x: 0, y: 0)
-        circle.strokeColor = .white
-        circle.glowWidth = 1.0
-        circle.fillColor = .orange
-        circle.physicsBody = SKPhysicsBody(circleOfRadius: 12)
-        circle.physicsBody?.restitution = 1
-        circle.physicsBody?.friction = 0
-        self.addChild(circle)
+        
         
 //        if let floor = floor?.copy() as! SKNode? {
 //            self.addChild(floor)
@@ -97,7 +103,22 @@ class GameScene: SKScene {
     }
     #else
     override func didMove(to view: SKView) {
+        let cameraNode = SKCameraNode()
+        
+        cameraNode.position = CGPoint(x: self.size.width / 2,
+                                      y: self.size.height / 2)
+        
+        self.addChild(cameraNode)
+        self.camera = cameraNode
+        
         self.setUpScene()
+        if let cir = self.circle {
+            cir.addObserver(self, forKeyPath: #keyPath(SKNode.position),
+                                    options: [.old, .new, .initial],
+                                    context: nil)
+        }
+        
+        
         let motionManager = CMMotionManager()
         motionManager.startAccelerometerUpdates()
         motionManager.accelerometerUpdateInterval = 0.1
@@ -110,6 +131,22 @@ class GameScene: SKScene {
     }
     #endif
 
+    override func observeValue(forKeyPath keyPath: String?,
+                               of object: Any?, change: [NSKeyValueChangeKey : Any]?,
+                               context: UnsafeMutableRawPointer?) {
+        
+        print("did \(keyPath) \(#keyPath(SKNode.position))")
+        if keyPath == #keyPath(SKNode.position) {
+            
+            guard let camera = self.camera, let circ = object as? SKNode else { fatalError() }
+            
+            let loop = SKAction.customAction(withDuration: TimeInterval(CGFloat.infinity)) {_,_ in
+                let move = SKAction.move(to: CGPoint(x: circ.position.x, y: circ.position.y), duration: 0.2)
+                camera.run(SKAction.sequence([move]))
+            }
+        }
+    }
+    
     func makeSpinny(at pos: CGPoint, color: SKColor) {
         if let spinny = self.spinnyNode?.copy() as! SKShapeNode? {
             spinny.position = pos
@@ -119,7 +156,7 @@ class GameScene: SKScene {
     }
     
     override func update(_ currentTime: TimeInterval) {
-        // Called before each frame is rendered
+
     }
 }
 
