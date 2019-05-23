@@ -143,15 +143,15 @@ class GameScene: SKScene {
             if let pos = cir.positionInScene {
                 let distance = pow((cam.position.x - pos.x), 2) + pow((cam.position.y - pos.y), 2);
                 if (distance > 50) {
-                    let action = SKAction.move(to: CGPoint(x: pos.x, y: pos.y), duration: 1.0 / Double(level))
+                    let action = SKAction.move(to: CGPoint(x: pos.x, y: pos.y), duration: 1.0 / pow(Double(self.level), 0.7))
                     cam.run(action)
                 }
             }
             
             //rotate cam every 20s
-            if (self.level > 1 && Int(round(Date().timeIntervalSince(self.start))) % Int(round((20 / pow(CGFloat(self.level), 0.7)))) == 0) {
+            if (self.level > 3 && Int(round(Date().timeIntervalSince(self.start))) % Int(round((30 / pow(CGFloat(self.level), 0.7)))) == 0) {
                 let angle = pow(CGFloat(self.level), 0.7)/200
-                let action = SKAction.rotate(byAngle: CGFloat(level) * CGFloat.random(in: -angle...angle), duration: (10 / Double(level)))
+                let action = SKAction.rotate(byAngle: CGFloat(level) * CGFloat.random(in: -angle...angle), duration: (15 / pow(Double(self.level), 0.7)))
                 action.timingMode = SKActionTimingMode.easeInEaseOut;
                 container.run(action)
             }
