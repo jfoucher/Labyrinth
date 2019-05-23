@@ -21,6 +21,7 @@ class GameScene: SKScene {
     fileprivate var maze : Maze?
     fileprivate var spinnyNode : SKShapeNode?
     var circle: SKShapeNode?
+    var mainNode: SKNode?
     var won: Bool = false {
         willSet(newNow) {
             print(newNow)
@@ -75,12 +76,14 @@ class GameScene: SKScene {
         
         self.addChild(cameraNode)
         self.camera = cameraNode
-
+        let mainNode = SKNode()
+        self.mainNode = mainNode
+        self.addChild(mainNode)
         self.maze = Maze(cellSize: 60, mazeSize: CGSize(width: pow(Double(level), 0.7) * 180, height: pow(Double(level), 0.7) * 180))
         
-        if let maze = self.maze {
+        if let maze = self.maze, let container = self.mainNode {
             for wall in maze.walls {
-                self.addChild(wall)
+                container.addChild(wall)
             }
 //            for label in maze.labels {
 //                self.addChild(label)
@@ -88,7 +91,7 @@ class GameScene: SKScene {
         }
 
         self.circle = SKShapeNode(circleOfRadius: 10 )
-        if let pos = maze?.startCell?.coordinates, let cir = self.circle {
+        if let pos = maze?.startCell?.coordinates, let cir = self.circle, let container = self.mainNode {
             cir.position = pos
             cir.strokeColor = .white
             cir.glowWidth = 1.0
@@ -96,7 +99,7 @@ class GameScene: SKScene {
             cir.physicsBody = SKPhysicsBody(circleOfRadius: 12)
             cir.physicsBody?.restitution = 0.6
             cir.physicsBody?.friction = 0.1
-            self.addChild(cir)
+            container.addChild(cir)
         }
         self.start = Date()
     }
@@ -135,11 +138,22 @@ class GameScene: SKScene {
             }
         }
         //Camera handling
-        if let cam = self.camera, let cir = self.circle {
-            let distance = pow((cam.position.x - cir.position.x), 2) + pow((cam.position.y - cir.position.y), 2);
-            if (distance > 50) {
-                let action = SKAction.move(to: CGPoint(x: cir.position.x, y: cir.position.y), duration: 1.0)
-                cam.run(action)
+        if let cam = self.camera, let cir = self.circle, let container = self.mainNode {
+
+            if let pos = cir.positionInScene {
+                let distance = pow((cam.position.x - pos.x), 2) + pow((cam.position.y - pos.y), 2);
+                if (distance > 50) {
+                    let action = SKAction.move(to: CGPoint(x: pos.x, y: pos.y), duration: 1.0 / Double(level))
+                    cam.run(action)
+                }
+            }
+            
+            //rotate cam every 20s
+            if (self.level > 1 && Int(round(Date().timeIntervalSince(self.start))) % Int(round((20 / pow(CGFloat(self.level), 0.7)))) == 0) {
+                let angle = pow(CGFloat(self.level), 0.7)/200
+                let action = SKAction.rotate(byAngle: CGFloat(level) * CGFloat.random(in: -angle...angle), duration: (10 / Double(level)))
+                action.timingMode = SKActionTimingMode.easeInEaseOut;
+                container.run(action)
             }
         }
     }
@@ -163,23 +177,23 @@ extension GameScene {
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches {
-            //self.makeSpinny(at: t.location(in: self), color: SKColor.blue)
-        }
+//        for t in touches {
+//            //self.makeSpinny(at: t.location(in: self), color: SKColor.blue)
+//        }
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         self.touches -= touches.count
-        for t in touches {
-
-        }
+//        for t in touches {
+//
+//        }
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         self.touches -= touches.count
-        for t in touches {
-            //self.makeSpinny(at: t.location(in: self), color: SKColor.red)
-        }
+//        for t in touches {
+//            //self.makeSpinny(at: t.location(in: self), color: SKColor.red)
+//        }
     }
     
    
@@ -205,3 +219,12 @@ extension GameScene {
 }
 #endif
 
+extension SKNode {
+    var positionInScene:CGPoint? {
+        if let scene = scene, let parent = parent {
+            return parent.convert(position, to:scene)
+        } else {
+            return nil
+        }
+    }
+}
